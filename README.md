@@ -88,6 +88,8 @@ cifar10-cnn-classifier/
 
 ## Getting Started
 
+> **Note on hardware:** Training runs on CPU. TensorFlow dropped native GPU support on Windows starting with version 2.11 (GPU training now requires WSL2). To keep the workflow simple and fully within native Windows + GitBash, this project trains on CPU — CIFAR-10 is small enough that this remains practical (~1-3 min/epoch).
+
 ### 0. Environment setup (once)
 
 A single virtual environment at the project root is shared between `model/` and `backend/`:
