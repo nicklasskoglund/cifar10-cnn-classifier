@@ -216,3 +216,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Model artifacts (large files - keep out of git history)
+model/saved_models/*.h5
+model/saved_models/*.keras
+
+# Raw datasets (never commit)
+model/data/
+*.tar.gz
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Node / React
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
