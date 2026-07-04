@@ -52,6 +52,7 @@ This was built as a school project to demonstrate practical understanding of CNN
 
 ```
 cifar10-cnn-classifier/
+├── .venv/                     # Shared virtual environment (gitignored)
 ├── model/                     # Model training, evaluation & experimentation
 │   ├── notebooks/              # Jupyter notebooks (EDA, training, evaluation)
 │   ├── src/                    # Reusable Python modules
@@ -87,25 +88,29 @@ cifar10-cnn-classifier/
 
 ## Getting Started
 
+### 0. Environment setup (once)
+
+A single virtual environment at the project root is shared between `model/` and `backend/`:
+
+```bash
+python -m venv .venv
+source .venv/Scripts/activate      # GitBash on Windows
+pip install -r model/requirements.txt
+pip install -r backend/requirements.txt
+```
+
 ### 1. Model (training & evaluation)
 
 ```bash
-cd model
-python -m venv .venv
-source .venv/Scripts/activate      # GitBash on Windows
-pip install -r requirements.txt
-
-jupyter notebook notebooks/01_cnn_training.ipynb
+source .venv/Scripts/activate      # if not already active
+jupyter notebook model/notebooks/01_cnn_training.ipynb
 ```
 
 ### 2. Backend (API)
 
 ```bash
+source .venv/Scripts/activate      # if not already active
 cd backend
-python -m venv .venv
-source .venv/Scripts/activate
-pip install -r requirements.txt
-
 uvicorn main:app --reload
 ```
 
