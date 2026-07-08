@@ -13,6 +13,8 @@
 - [Project Structure](#project-structure)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
+  - [0. Environment setup (once)](#0-environment-setup-once)
+  - [0.5 Dataset setup (once)](#05-dataset-setup-once)
   - [1. Model (training & evaluation)](#1-model-training--evaluation)
   - [2. Backend (API)](#2-backend-api)
   - [3. Frontend (web demo)](#3-frontend-web-demo)
@@ -47,6 +49,8 @@ This was built as a school project to demonstrate practical understanding of CNN
 - 6,000 images per class (balanced dataset)
 
 > _A more detailed dataset analysis (class distribution, sample images, pixel statistics) is documented in [`model/notebooks/01_cnn_training.ipynb`](model/notebooks/01_cnn_training.ipynb)._
+
+**Note on data loading:** this project does *not* use `tf.keras.datasets.cifar10.load_data()`. In practice, that function's built-in download/cache handling proved unreliable (slow/unstable connections to the original dataset host, and inconsistent local-cache validation even with a verified checksum match). Instead, the dataset is downloaded once manually and read directly from the extracted pickle files via a small custom loader in [`model/src/data_loader.py`](model/src/data_loader.py). See [0.5 Dataset setup](#05-dataset-setup-once) below for the one-time download step.
 
 ## Project Structure
 
@@ -100,6 +104,25 @@ source .venv/Scripts/activate      # GitBash on Windows
 pip install -r model/requirements.txt
 pip install -r backend/requirements.txt
 ```
+
+### 0.5 Dataset setup (once)
+
+Download the dataset from Kaggle: **[cifar10-python](https://www.kaggle.com/datasets/pankrzysiu/cifar10-python)** (this mirrors the original CIFAR-10 pickle format).
+
+Extract it so the folder structure looks like this:
+
+```
+~/.keras/datasets/cifar-10-batches-py/
+├── batches.meta
+├── data_batch_1
+├── data_batch_2
+├── data_batch_3
+├── data_batch_4
+├── data_batch_5
+└── test_batch
+```
+
+> This path is used regardless of operating system — on Windows via GitBash, `~` resolves to `C:\Users\<you>\`. No other setup is needed; `data_loader.py` reads these files directly.
 
 ### 1. Model (training & evaluation)
 
