@@ -10,18 +10,27 @@ MaxPooling och Dropout, följt av ett fullt anslutet klassificeringshuvud.
 BatchNormalization används för snabbare och stabilare träning (särskilt
 värdefullt vid CPU-träning), och Dropout används genomgående för att
 motverka overfitting.
+
+Om augment=True läggs data augmentation-lagren (från data_loader.py) till
+som de första lagren i modellen. Dessa lager är, precis som Dropout,
+endast aktiva under träning (model.fit()) - vid prediktion/utvärdering
+(model.predict(), model.evaluate()) passerar bilderna igenom oförändrade.
 """
 
 from tensorflow.keras import layers, models
 
+from data_loader import build_augmentation_layer
 
-def build_model(input_shape=(32, 32, 3), num_classes=10):
+
+def build_model(input_shape=(32, 32, 3), num_classes=10, augment=True):
     """
     Bygger och kompilerar CNN-modellen för CIFAR-10-klassificering.
 
     Args:
         input_shape (tuple): Formen på indatabilderna (höjd, bredd, kanaler).
         num_classes (int): Antal klasser i output.
+        augment (bool): om True, läggs data augmentation-lagren till som de
+                        första lagren i modellen (endast aktiva under träning).
 
     Returns:
         tf.keras.Model: Kompilerad Keras Sequential-modell, redo för träning.
@@ -30,6 +39,10 @@ def build_model(input_shape=(32, 32, 3), num_classes=10):
 
     # --- Input ---
     model.add(layers.Input(shape=input_shape))
+
+    # --- Data augmentation (endast aktiv under träning) ---
+    if augment:
+        model.add(build_augmentation_layer())
 
     # --- Conv-block 1 ---
     model.add(layers.Conv2D(32, (3, 3), padding="same", activation="relu"))

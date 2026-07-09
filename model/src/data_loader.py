@@ -26,6 +26,7 @@ import pickle
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras import layers, Sequential
 
 CIFAR_DIR = os.path.expanduser("~/.keras/datasets/cifar-10-batches-py")
 
@@ -104,3 +105,33 @@ def load_cifar10(val_size=0.1, random_state=42):
     )
 
     return (x_train, y_train), (x_val, y_val), (x_test, y_test)
+
+
+def build_augmentation_layer():
+    """
+    Bygger ett Keras-lager som utför enkel data augmentation på bilder:
+    slumpmässig horisontell spegling, liten rotation och liten zoom.
+
+    Augmentation ska ENDAST appliceras på träningsdatan (aldrig på
+    validerings- eller testdatan), och endast under träning - lagret
+    är inaktivt vid inferens/prediktion (t.ex. i webbdemot).
+
+    Varför just dessa transformationer:
+    - RandomFlip("horizontal"): CIFAR-10-objekt (bilar, djur, flygplan osv.)
+      ser lika rimliga ut spegelvända, så detta ger gratis variation utan
+      att förvränga bilden.
+    - RandomRotation(0.05): roterar bilden max ca ±18 grader, vilket ger
+      lite variation utan att förstöra små detaljer i de redan lågupplösta
+      32x32-bilderna.
+    - RandomZoom(0.1): simulerar att objektet är lite närmare/längre bort
+      eller lite förskjutet i bilden.
+
+    Returnerar:
+        tf.keras.Sequential: ett lager som kan läggas till direkt i en
+        modell, eller appliceras separat på en dataset-pipeline.
+    """
+    return Sequential([
+        layers.RandomFlip("horizontal"),
+        layers.RandomRotation(0.05),
+        layers.RandomZoom(0.1),
+    ], name="data_augmentation")
