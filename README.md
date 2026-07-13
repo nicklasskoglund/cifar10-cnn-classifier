@@ -80,6 +80,11 @@ cifar10-cnn-classifier/
 │
 ├── frontend/                  # React web demo (Vite)
 │   ├── src/
+│   │   ├── components/
+│   │   │   ├── ImageUploader.jsx    # File selection, image preview, Predict button
+│   │   │   └── PredictionResult.jsx # Predicted class + per-class confidence bar chart
+│   │   ├── App.jsx                   # Main component: upload/prediction/loading/error state
+│   │   └── App.css                   # Dark-mode styling
 │   └── package.json
 │
 └── docs/                      # Presentation materials & supporting images
@@ -161,6 +166,8 @@ API will be available at `http://localhost:8000`. Interactive docs at `http://lo
 
 ### 3. Frontend (web demo)
 
+> **Note:** the backend (step 2) must be running at the same time — the frontend has no logic of its own and simply calls the backend's `/predict` endpoint.
+
 ```bash
 cd frontend
 npm install
@@ -168,6 +175,8 @@ npm run dev
 ```
 
 App will be available at `http://localhost:5173`.
+
+The demo lets you upload an image, then displays the model's predicted class along with a confidence bar chart across all 10 CIFAR-10 classes. It's a minimal interface built for the live presentation demo — not a production UI.
 
 ## Model Architecture
 
@@ -202,6 +211,7 @@ Training and validation curves, along with the full confusion matrix and per-cla
 
 - **CPU-only training:** training runs on CPU (~1-3 min/epoch), since TensorFlow dropped native GPU support on Windows from version 2.11 onward without WSL2. This keeps epoch counts and architecture size practical but limits how large the model or dataset could realistically grow within the project's constraints.
 - **Result variance:** no fixed random seed is used, so accuracy/loss vary slightly between training runs (weight initialization, data augmentation, and batch order are all stochastic).
+- **Hardcoded API URL:** the frontend calls `http://localhost:8000/predict` directly, with no environment variable configuration — sufficient for local development and the live demo, but would need to be made configurable for any real deployment.
 - **Potential future improvements:** transfer learning (e.g. a pretrained backbone), more aggressive data augmentation, hyperparameter tuning (learning rate schedules, filter counts), or a deeper architecture — none of which were pursued here given the scope of a course project.
 
 ## Author
