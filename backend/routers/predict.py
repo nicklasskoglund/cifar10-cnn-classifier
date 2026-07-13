@@ -1,9 +1,10 @@
 """
 Prediction-router för CIFAR-10 CNN-klassificeraren.
 
-Laddar den tränade Keras-modellen en gång vid uppstart och exponerar
-en POST /predict-endpoint som tar emot en uppladdad bild och returnerar
-den predikterade klassen tillsammans med confidence-poäng för alla 10 klasser.
+Laddar den tränade Keras-modellen vid serverns uppstart (se lifespan-hanteraren
+i main.py) och exponerar en POST /predict-endpoint som tar emot en uppladdad
+bild och returnerar den predikterade klassen tillsammans med confidence-poäng
+för alla 10 klasser.
 """
 
 from io import BytesIO
@@ -40,16 +41,39 @@ MODEL_PATH = Path(__file__).resolve().parents[2] / "model" / "saved_models" / "b
 _model = None
 
 
+def load_model() -> None:
+    """
+    Ladda den tränade modellen in i minnet.
+
+    Anropas explicit vid serverns uppstart (via lifespan-hanteraren i main.py)
+    så att modellen redan är varm när första requesten kommer in — viktigt
+    för att demot ska kännas responsivt under presentationen.
+    """
+    global _model
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"Modellfilen hittades inte på {MODEL_PATH}. "
+            "Kontrollera att best_model.keras finns i model/saved_models/."
+        )
+    _model = tf.keras.models.load_model(MODEL_PATH)
+
+
+def is_model_loaded() -> bool:
+    """Returnera True om modellen är laddad i minnet, annars False."""
+    return _model is not None
+
+
 def get_model() -> tf.keras.Model:
-    """Ladda den tränade modellen in i minnet vid första anropet (lazy singleton)."""
+    """
+    Hämta den laddade modellen.
+
+    Fungerar som en säkerhetsspärr: om modellen av någon anledning inte
+    laddades vid uppstart (t.ex. om filen saknades då men finns nu),
+    laddas den här istället för att kraschera requesten helt i onödan.
+    """
     global _model
     if _model is None:
-        if not MODEL_PATH.exists():
-            raise FileNotFoundError(
-                f"Modellfilen hittades inte på {MODEL_PATH}. "
-                "Kontrollera att best_model.keras finns i model/saved_models/."
-            )
-        _model = tf.keras.models.load_model(MODEL_PATH)
+        load_model()
     return _model
 
 
