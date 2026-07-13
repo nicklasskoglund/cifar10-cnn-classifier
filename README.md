@@ -16,6 +16,7 @@
   - [0. Environment setup (once)](#0-environment-setup-once)
   - [0.5 Dataset setup (once)](#05-dataset-setup-once)
   - [1. Model (training & evaluation)](#1-model-training--evaluation)
+  - [1.5 Model (CLI alternative)](#15-model-cli-alternative)
   - [2. Backend (API)](#2-backend-api)
   - [3. Frontend (web demo)](#3-frontend-web-demo)
 - [Model Architecture](#model-architecture)
@@ -60,12 +61,16 @@ cifar10-cnn-classifier/
 ├── model/                     # Model training, evaluation & experimentation
 │   ├── notebooks/              # Jupyter notebooks (EDA, training, evaluation)
 │   ├── src/                    # Reusable Python modules
+│   │   ├── __init__.py          # Makes model/src a Python package
 │   │   ├── data_loader.py       # Dataset loading & preprocessing
 │   │   ├── model.py             # CNN architecture definition
-│   │   ├── train.py             # CLI training script
+│   │   ├── train.py             # Reusable training function (used by notebook & CLI)
 │   │   └── evaluate.py          # Metrics, confusion matrix, error analysis
 │   ├── saved_models/            # Trained model artifacts (gitignored)
 │   └── requirements.txt
+│
+├── run_pipeline.py             # CLI entry point: runs the full train+evaluate pipeline
+│                                # without opening Jupyter (uses model/src modules)
 │
 ├── backend/                   # FastAPI inference API
 │   ├── main.py
@@ -131,6 +136,19 @@ source .venv/Scripts/activate      # if not already active
 jupyter notebook model/notebooks/01_cnn_training.ipynb
 ```
 
+### 1.5 Model (CLI alternative)
+
+As an alternative to the notebook, the full training + evaluation pipeline can be run directly from the terminal — useful for quickly re-running everything after a code change, without opening Jupyter:
+
+```bash
+source .venv/Scripts/activate      # if not already active
+python run_pipeline.py
+```
+
+This loads the dataset, builds and trains the model (with `EarlyStopping` and `ModelCheckpoint`), plots the training/validation curves, and evaluates the model against the test set — printing the final test accuracy/loss and displaying a confusion matrix.
+
+> Note: results vary slightly between runs due to random weight initialization, data augmentation, and batch shuffling — no fixed random seed is used, so each run is an independent experiment.
+
 ### 2. Backend (API)
 
 ```bash
@@ -153,20 +171,38 @@ App will be available at `http://localhost:5173`.
 
 ## Model Architecture
 
-_To be documented once the architecture is finalized — will include layer diagram, parameter count, and design rationale._
+The model is a CNN built from scratch (no transfer learning), consisting of 3 convolutional blocks with increasing filter depth, followed by a dense classification head:
+
+- **Conv Block 1:** 2× Conv2D (32 filters, 3×3) → BatchNormalization → MaxPooling2D → Dropout (0.25)
+- **Conv Block 2:** 2× Conv2D (64 filters, 3×3) → BatchNormalization → MaxPooling2D → Dropout (0.25)
+- **Conv Block 3:** 2× Conv2D (128 filters, 3×3) → BatchNormalization → MaxPooling2D → Dropout (0.25)
+- **Classification head:** Flatten → Dense (128, ReLU) → Dropout (0.5) → Dense (10, Softmax)
+
+**Total parameters:** 552,362
+
+**Data augmentation:** applied as the first layer(s) of the model (active only during training, not inference) — `RandomFlip("horizontal")`, `RandomRotation(0.05)`, `RandomZoom(0.1)`. These add 0 trainable parameters, since they're deterministic image transformations rather than learned layers.
+
+**Design rationale:**
+- BatchNormalization after each Conv2D speeds up and stabilizes training, which matters especially on CPU.
+- Dropout at increasing rates (0.25 in conv blocks, 0.5 in the dense head) helps prevent overfitting on the relatively small 32×32 images.
+- Filter depth increases (32 → 64 → 128) while spatial dimensions shrink (via MaxPooling), following the standard CNN pattern of trading spatial resolution for feature richness.
+
+**Training configuration:** Adam optimizer, categorical cross-entropy loss, up to 30 epochs with `EarlyStopping` (`monitor="val_loss"`, `patience=5`, `restore_best_weights=True`) and `ModelCheckpoint` (saves best weights to `model/saved_models/best_model.keras`).
 
 ## Results
 
-_To be filled in after training and evaluation:_
+- **Test accuracy:** 83.13%
+- **Test loss:** 0.5024
 
-- Test accuracy / loss
-- Confusion matrix
-- Per-class precision & recall
-- Training/validation curves
+Training and validation curves, along with the full confusion matrix and per-class breakdown, are documented in [`model/notebooks/01_cnn_training.ipynb`](model/notebooks/01_cnn_training.ipynb).
+
+> Note: since no fixed random seed is used, re-running training (via the notebook or `run_pipeline.py`) will produce slightly different results each time — typically within a few percentage points of the figures above.
 
 ## Known Limitations & Future Improvements
 
-_To be filled in after evaluation — e.g. commonly confused classes, overfitting behavior, and proposed solutions (data augmentation, regularization, architecture changes, transfer learning)._
+- **CPU-only training:** training runs on CPU (~1-3 min/epoch), since TensorFlow dropped native GPU support on Windows from version 2.11 onward without WSL2. This keeps epoch counts and architecture size practical but limits how large the model or dataset could realistically grow within the project's constraints.
+- **Result variance:** no fixed random seed is used, so accuracy/loss vary slightly between training runs (weight initialization, data augmentation, and batch order are all stochastic).
+- **Potential future improvements:** transfer learning (e.g. a pretrained backbone), more aggressive data augmentation, hyperparameter tuning (learning rate schedules, filter counts), or a deeper architecture — none of which were pursued here given the scope of a course project.
 
 ## Author
 
