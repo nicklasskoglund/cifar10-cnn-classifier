@@ -1,0 +1,17 @@
+# Core deep learning framework
+tensorflow==2.19.0
+
+# Data handling & numerical computing
+numpy>=1.26.0
+pandas>=2.2.0
+
+# Visualization (EDA, training curves, confusion matrix)
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# Evaluation metrics
+scikit-learn>=1.4.0
+
+# Notebook environment
+jupyter>=1.0.0
+ipykernel>=6.29.0
